@@ -1,6 +1,17 @@
 #include <stdlib.h>
 #include "logical.h"
 
+#define LOGICAL_TYPE_VALUE      1
+#define LOGICAL_TYPE_NEXT       2
+#define LOGICAL_TYPE_OPT        3
+
+#define LOGICAL_OPT_TYPE_AND    0
+#define LOGICAL_OPT_TYPE_OR     1
+#define LOGICAL_OPT_TYPE_XOR    2
+
+#define LOGICAL_NEXT_TYPE_NOT   1
+#define LOGICAL_NEXT_TYPE_YES   0
+
 static int calculus(logical_data* pdata);
 
 static int calculus_v(logical_data_v* pdata)
@@ -17,9 +28,9 @@ static int calculus_next(logical_data_next* pdata)
 static int calculus_opt(logical_data_opt* pdata)
 {
         switch (pdata->type){
-                case 0: return calculus(pdata->pleft) == 0 ? 0 : calculus(pdata->pright);
-                case 1: return calculus(pdata->pleft) == 1 ? 1 : calculus(pdata->pright);
-                case 2: return calculus(pdata->pleft) ^ calculus(pdata->pright);
+                case LOGICAL_OPT_TYPE_AND: return calculus(pdata->pleft) == 0 ? 0 : calculus(pdata->pright);
+                case LOGICAL_OPT_TYPE_OR: return calculus(pdata->pleft) == 1 ? 1 : calculus(pdata->pright);
+                case LOGICAL_OPT_TYPE_XOR: return calculus(pdata->pleft) ^ calculus(pdata->pright);
                 default:return 0;
         }
 }
@@ -30,9 +41,9 @@ static int calculus(logical_data* pdata)
                 return 0;
         }
         switch (pdata->type){
-                case 1: return calculus_v(&pdata->data.value);
-                case 2: return calculus_next(&pdata->data.next);
-                case 3: return calculus_opt(&pdata->data.opt);
+                case LOGICAL_TYPE_VALUE: return calculus_v(&pdata->data.value);
+                case LOGICAL_TYPE_NEXT: return calculus_next(&pdata->data.next);
+                case LOGICAL_TYPE_OPT: return calculus_opt(&pdata->data.opt);
                 default:return 0;
         }
 }
@@ -51,7 +62,7 @@ static logical_data* create_data(int type)
 
 static logical_data* create_data_v(int value)
 {
-        logical_data*         pdata = create_data(1);
+        logical_data*         pdata = create_data(LOGICAL_TYPE_VALUE);
         if (pdata == NULL) {
                 return NULL;
         }
@@ -61,7 +72,7 @@ static logical_data* create_data_v(int value)
 
 static logical_data* create_data_next(int oprate, logical_data* pnext)
 {
-        logical_data*         pdata = create_data(2);
+        logical_data*         pdata = create_data(LOGICAL_TYPE_NEXT);
         if (pdata == NULL) {
                 return NULL;
         }
@@ -72,7 +83,7 @@ static logical_data* create_data_next(int oprate, logical_data* pnext)
 
 static logical_data* create_data_opt(int type, logical_data* pleft, logical_data* pright)
 {
-        logical_data*         pdata = create_data(3);
+        logical_data*         pdata = create_data(LOGICAL_TYPE_OPT);
         if (pdata == NULL) {
                 return NULL;
         }
@@ -84,17 +95,17 @@ static logical_data* create_data_opt(int type, logical_data* pleft, logical_data
 
 static logical_data* create_data_and(logical_data* pleft, logical_data* pright)
 {
-        return create_data_opt(0, pleft, pright);
+        return create_data_opt(LOGICAL_OPT_TYPE_AND, pleft, pright);
 }
 
 static logical_data* create_data_or(logical_data* pleft, logical_data* pright)
 {
-        return create_data_opt(1, pleft, pright);
+        return create_data_opt(LOGICAL_OPT_TYPE_OR, pleft, pright);
 }
 
 static logical_data* create_data_xor(logical_data* pleft, logical_data* pright)
 {
-        return create_data_opt(2, pleft, pright);
+        return create_data_opt(LOGICAL_OPT_TYPE_XOR, pleft, pright);
 }
 
 
@@ -125,18 +136,21 @@ static logical_data* parse_next(char** pp)
 {
 
         skip_space(pp);
-        int opt = 0;
+        int opt;
         if (**pp == '!') {
-                opt = 1;
+                opt = LOGICAL_NEXT_TYPE_NOT;
                 (*pp)++;
+        }
+        else{
+                opt = LOGICAL_NEXT_TYPE_YES;
         }
         skip_space(pp);
         if (**pp == '(') {
                 (*pp)++;
-                return create_data_next(opt, parse(pp));;
+                return create_data_next(opt, parse(pp));
         }
         else {
-                return parse_value(pp);
+                return create_data_next(opt, parse_value(pp));
         }
 }
 
@@ -176,7 +190,21 @@ static logical_data* parse(char** pp)
 
 
 
-int logical_calculus(logical_data* pdata){
+
+
+
+void loggical_destroy(logical_data* pdata){
+        if (pdata == NULL) {
+                return;
+        }
+        switch (pdata->type){
+                case LOGICAL_TYPE_VALUE: free(pdata); break;
+                case LOGICAL_TYPE_NEXT: loggical_destroy(pdata->data.next.pnext); free(pdata); break;
+                case LOGICAL_TYPE_OPT: loggical_destroy(pdata->data.opt.pleft); loggical_destroy(pdata->data.opt.pright); free(pdata); break;
+                default:break;
+        }
+}
+int logical_calculus(logical_data* pdata) {
         return calculus(pdata);
 }
 logical_data* str2logical(char str[]) {
