@@ -149,8 +149,11 @@ static logical_data* parse_next(char** pp)
                 (*pp)++;
                 return create_data_next(opt, parse(pp));
         }
-        else {
+        else if(opt == LOGICAL_NEXT_TYPE_NOT){
                 return create_data_next(opt, parse_value(pp));
+        }
+        else{
+                return parse_value(pp);
         }
 }
 
