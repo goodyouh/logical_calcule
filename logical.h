@@ -33,3 +33,4 @@ struct logical_data
 
 int logical_calculus(logical_data* pdata);
 logical_data* str2logical(char str[]);
+void loggical_destroy(logical_data* pdata);
