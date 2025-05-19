@@ -28,8 +28,8 @@ static int calculus_next(logical_data_next* pdata)
 static int calculus_opt(logical_data_opt* pdata)
 {
         switch (pdata->type){
-                case LOGICAL_OPT_TYPE_AND: return calculus(pdata->pleft) == 0 ? 0 : calculus(pdata->pright);
-                case LOGICAL_OPT_TYPE_OR: return calculus(pdata->pleft) == 1 ? 1 : calculus(pdata->pright);
+                case LOGICAL_OPT_TYPE_AND: return calculus(pdata->pright) == 0 ? 0 : calculus(pdata->pleft);
+                case LOGICAL_OPT_TYPE_OR: return calculus(pdata->pright) == 1 ? 1 : calculus(pdata->pleft);
                 case LOGICAL_OPT_TYPE_XOR: return calculus(pdata->pleft) ^ calculus(pdata->pright);
                 default:return 0;
         }
